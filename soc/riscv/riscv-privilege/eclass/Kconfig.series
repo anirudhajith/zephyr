@@ -1,0 +1,10 @@
+# RISCV_SHAKTI SOC implementation
+
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RISCV_SHAKTI
+	bool "Shakti SOC implementation"
+	select RISCV
+	select SOC_FAMILY_RISCV_PRIVILEGE
+	help
+	  Enable support for Shakti SOC

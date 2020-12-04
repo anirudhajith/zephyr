@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PINAKA
+
+config BOARD
+	default "pinaka"
+
+config HAS_FLASH_LOAD_OFFSET
+	default n
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 128
+
+endif

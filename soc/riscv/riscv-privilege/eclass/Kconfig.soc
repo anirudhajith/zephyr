@@ -1,0 +1,12 @@
+# RISCV_SHAKTI SOC configuration options
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Shakti Eclass SOC implementation"
+	depends on SOC_SERIES_RISCV_SHAKTI
+
+config SOC_RISCV_SHAKTI_ECLASS
+	bool "Shakti Eclass SoC implementation"
+	select ATOMIC_OPERATIONS_C
+
+endchoice
