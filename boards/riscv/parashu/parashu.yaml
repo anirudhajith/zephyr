@@ -1,0 +1,13 @@
+identifier: parashu
+name: Shakti parashu
+type: mcu
+arch: riscv32
+toolchain:
+  - zephyr
+ram: 16
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+    - xip  
