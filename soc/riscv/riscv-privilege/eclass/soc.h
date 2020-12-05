@@ -16,18 +16,18 @@
 #define RISCV_MTIME_BASE             0x0200BFF8
 #define RISCV_MTIMECMP_BASE          0x02004000
 
-#if 0
 
 /* PINMUX Configuration */
-#define SIFIVE_PINMUX_0_BASE_ADDR     (DT_REG_ADDR(DT_INST(0, sifive_gpio0)) + 0x38)
+#define SHAKTI_PINMUX_0_BASE_ADDR     (DT_REG_ADDR(DT_INST(0, shakti_gpio0)) + 0x38)
 
 /* PINMUX IO Hardware Functions */
-#define SIFIVE_PINMUX_IOF0            0x00
-#define SIFIVE_PINMUX_IOF1            0x01
+#define SHAKTI_PINMUX_IOF0            0x00
+#define SHAKTI_PINMUX_IOF1            0x01
 
 /* PINMUX MAX PINS */
-#define SIFIVE_PINMUX_PINS            32
+#define SHAKTI_PINMUX_PINS            32
 
+#if 0
 /* Clock controller. */
 #define PRCI_BASE_ADDR               0x10008000
 

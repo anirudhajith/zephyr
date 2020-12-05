@@ -1,11 +1,9 @@
 /*
- * Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
- *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
- * @brief UART driver for the SiFive Freedom Processor
+ * @brief UART driver for the shakti uart v2
  */
 
 #define DT_DRV_COMPAT shakti_uart0
@@ -13,33 +11,53 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <drivers/uart.h>
+#define asm __asm__
 
-#define RXDATA_EMPTY   (1 << 31)   /* Receive FIFO Empty */
-#define RXDATA_MASK    0xFF        /* Receive Data Mask */
+#define UART_STS_RX_THRESHOLD		1 << 8
+#define UART_STS_BREAK_ERROR	        1 << 7
+#define UART_STS_FRAME_ERROR	        1 << 6
+#define UART_STS_OVERRUN	        1 << 5
+#define UART_STS_PARITY_ERROR		1 << 4
+#define UART_STS_RX_FULL		1 << 3
+#define UART_STS_RX_NOT_EMPTY		1 << 2
+#define UART_STS_TX_FULL		1 << 1
+#define UART_STS_TX_EMPTY		1 << 0
 
-#define TXDATA_FULL    (1 << 31)   /* Transmit FIFO Full */
-
-#define TXCTRL_TXEN    (1 << 0)    /* Activate Tx Channel */
-
-#define RXCTRL_RXEN    (1 << 0)    /* Activate Rx Channel */
-
-#define IE_TXWM        (1 << 0)    /* TX Interrupt Enable/Pending */
-#define IE_RXWM        (1 << 1)    /* RX Interrupt Enable/Pending */
-
-/*
- * RX/TX Threshold count to generate TX/RX Interrupts.
- * Used by txctrl and rxctrl registers
- */
-#define CTRL_CNT(x)    (((x) & 0x07) << 16)
+/*! UART Interrupt Enable bits description */
+#define UART_ENABLE_RX_THRESHOLD	1 << 8
+#define UART_ENABLE_BREAK_ERROR		1 << 7
+#define UART_ENABLE_FRAME_ERROR		1 << 6
+#define UART_ENABLE_OVERRUN		1 << 5
+#define UART_ENABLE_PARITY_ERROR	1 << 4
+#define UART_ENABLE_RX_FULL		1 << 3
+#define UART_ENABLE_RX_NOT_EMPTY	1 << 2
+#define UART_ENABLE_TX_FULL		1 << 1
+#define UART_ENABLE_TX_EMPTY		1 << 0
+#define UART_TX_BUFFER_SIZE       	10000
 
 struct uart_shakti_regs_t {
-	uint32_t tx;
-	uint32_t rx;
-	uint32_t txctrl;
-	uint32_t rxctrl;
-	uint32_t ie;
-	uint32_t ip;
-	uint32_t div;
+	uint16_t baud;	 /*! Baud rate configuration Register -- 16 bits*/
+	uint16_t reserv0;	 /*! reserved */
+	uint32_t  tx;	 /*! Transmit register -- the value that needs to be tranmitted needs to be written here-32 bits*/
+	uint32_t  rx;	 /*! Receive register -- the value that received from uart can be read from here --32 bits*/
+	char  status;	 /*! Status register -- Reads various transmit and receive status - 8 bits*/
+	char  reserv1;	 /*! reserved */
+	uint16_t  reserv2; /*! reserved */
+	uint16_t delay;    /*! Delays the transmit with specified clock - 16bits*/
+	uint16_t reserv3;  /*! reserved */
+	uint16_t control;   /*! Control Register -- Configures the no. of bits used, stop bits, parity enabled or not - 16bits*/
+	uint16_t reserv5;  /*! reserved */
+	char ie;	     /*! Enables the required interrupts - 8 bits*/
+	char reserv6;   /*! reserved */
+	uint16_t reserv7;  /*! reserved */
+	char  iqcycles; /*! 8-bit register that indicates number of input qualification cycles - 8 bits*/
+	char reserv8;   /*! reserved */
+	uint16_t reserv9;  /*! reserved */
+#ifdef USE_RX_THRESHOLD /*! This is to be used only when support is there. */
+	char rx_threshold;	/*! RX FIFO size configuration register - 8 bits*/
+	char reserv10;    /*! reserved */ 
+	uint16_t reserv11;    /*! reserved */
+#endif	
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -81,14 +99,12 @@ struct uart_shakti_data {
  * @param c Character to send
  */
 static void uart_shakti_poll_out(const struct device *dev,
-					 unsigned char c)
+		unsigned char c)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
 	/* Wait while TX FIFO is full */
-	while (uart->tx & TXDATA_FULL) {
-	}
-
+	while (uart->status & UART_STS_TX_FULL);
 	uart->tx = (int)c;
 }
 
@@ -103,15 +119,13 @@ static void uart_shakti_poll_out(const struct device *dev,
 static int uart_shakti_poll_in(const struct device *dev, unsigned char *c)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
-	uint32_t val = uart->rx;
 
-	if (val & RXDATA_EMPTY) {
-		return -1;
+	if (uart->status & UART_STS_RX_NOT_EMPTY) {
+		*c = (uart->rx);
+		return 0;
 	}
 
-	*c = (unsigned char)(val & RXDATA_MASK);
-
-	return 0;
+	return -1;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -126,14 +140,17 @@ static int uart_shakti_poll_in(const struct device *dev, unsigned char *c)
  * @return Number of bytes sent
  */
 static int uart_shakti_fifo_fill(const struct device *dev,
-				 const uint8_t *tx_data,
-				 int size)
+		const uint8_t *tx_data,
+		int size)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 	int i;
 
-	for (i = 0; i < size && !(uart->tx & TXDATA_FULL); i++)
-		uart->tx = (int)tx_data[i];
+	for (i = 0; i < size && ; i++)
+	{
+		while(uart->status & UART_STS_TX_FULL) ;
+		uart->tx = tx_data[i];
+	}
 
 	return i;
 }
@@ -148,22 +165,21 @@ static int uart_shakti_fifo_fill(const struct device *dev,
  * @return Number of bytes read
  */
 static int uart_shakti_fifo_read(const struct device *dev,
-				 uint8_t *rx_data,
-				 const int size)
+		uint8_t *rx_data,
+		const int size)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
-	int i;
+	int i = 0;
 	uint32_t val;
-
-	for (i = 0; i < size; i++) {
-		val = uart->rx;
-
-		if (val & RXDATA_EMPTY)
-			break;
-
-		rx_data[i] = (uint8_t)(val & RXDATA_MASK);
+	if(uart->status & UART_STS_RX_FULL || uart->status & UART_STS_RX_NOT_EMPTY )
+	{
+		for (i = 0; i < size; i++) {
+			if(uart->status & UART_STS_RX_NOT_EMPTY)
+				rx_data[i] = (uint8_t)(uart->rx);
+			else
+				break;
+		}
 	}
-
 	return i;
 }
 
@@ -178,7 +194,7 @@ static void uart_shakti_irq_tx_enable(const struct device *dev)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
-	uart->ie |= IE_TXWM;
+	uart->ie |= UART_ENABLE_TX_EMPTY;
 }
 
 /**
@@ -192,7 +208,7 @@ static void uart_shakti_irq_tx_disable(const struct device *dev)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
-	uart->ie &= ~IE_TXWM;
+	uart->ie &= ~UART_ENABLE_TX_EMPTY;
 }
 
 /**
@@ -206,7 +222,7 @@ static int uart_shakti_irq_tx_ready(const struct device *dev)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
-	return !!(uart->ip & IE_TXWM);
+	return (uart->status & UART_STS_TX_EMPTY);
 }
 
 /**
@@ -224,7 +240,7 @@ static int uart_shakti_irq_tx_complete(const struct device *dev)
 	 * No TX EMPTY flag for this controller,
 	 * just check if TX FIFO is not full
 	 */
-	return !(uart->tx & TXDATA_FULL);
+	return (uart->status & UART_STS_TX_EMPTY);
 }
 
 /**
@@ -238,7 +254,7 @@ static void uart_shakti_irq_rx_enable(const struct device *dev)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
-	uart->ie |= IE_RXWM;
+	uart->ie |= UART_ENABLE_RX_NOT_EMPTY;
 }
 
 /**
@@ -252,7 +268,7 @@ static void uart_shakti_irq_rx_disable(const struct device *dev)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
-	uart->ie &= ~IE_RXWM;
+	uart->ie &= ~UART_ENABLE_RX_NOT_EMPTY;
 }
 
 /**
@@ -266,7 +282,7 @@ static int uart_shakti_irq_rx_ready(const struct device *dev)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
-	return !!(uart->ip & IE_RXWM);
+	return !!(uart->status & UART_STS_RX_NOT_EMPTY);
 }
 
 /* No error interrupt for this controller */
@@ -291,7 +307,7 @@ static int uart_shakti_irq_is_pending(const struct device *dev)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
-	return !!(uart->ip & (IE_RXWM | IE_TXWM));
+	return !!(uart->status & (!UART_STS_TX_EMPTY | UART_STS_RX_NOT_EMPTY));
 }
 
 static int uart_shakti_irq_update(const struct device *dev)
@@ -308,8 +324,8 @@ static int uart_shakti_irq_update(const struct device *dev)
  * @return N/A
  */
 static void uart_shakti_irq_callback_set(const struct device *dev,
-					 uart_irq_callback_user_data_t cb,
-					 void *cb_data)
+		uart_irq_callback_user_data_t cb,
+		void *cb_data)
 {
 	struct uart_shakti_data *data = DEV_DATA(dev);
 
@@ -334,11 +350,13 @@ static int uart_shakti_init(const struct device *dev)
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
 	/* Enable TX and RX channels */
-	uart->txctrl = TXCTRL_TXEN | CTRL_CNT(cfg->txcnt_irq);
-	uart->rxctrl = RXCTRL_RXEN | CTRL_CNT(cfg->rxcnt_irq);
 
 	/* Set baud rate */
-	uart->div = cfg->sys_clk_freq / cfg->baud_rate - 1;
+	uart->baud = cfg->sys_clk_freq / (16 * cfg->baud_rate);
+//	uart->baud = 162; 
+
+	printk("clk freq = %d\n",cfg->sys_clk_freq);
+	printk("baudrate = %d\n",cfg->baud_rate);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Ensure that uart IRQ is disabled initially */
@@ -393,18 +411,18 @@ static const struct uart_shakti_device_config uart_shakti_dev_cfg_0 = {
 };
 
 DEVICE_AND_API_INIT(uart_shakti_0, DT_INST_LABEL(0),
-		    uart_shakti_init,
-		    &uart_shakti_data_0, &uart_shakti_dev_cfg_0,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    (void *)&uart_shakti_driver_api);
+		uart_shakti_init,
+		&uart_shakti_data_0, &uart_shakti_dev_cfg_0,
+		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		(void *)&uart_shakti_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_shakti_irq_cfg_func_0(void)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
-		    CONFIG_UART_SHAKTI_PORT_0_IRQ_PRIORITY,
-		    uart_shakti_irq_handler, DEVICE_GET(uart_shakti_0),
-		    0);
+			CONFIG_UART_SHAKTI_PORT_0_IRQ_PRIORITY,
+			uart_shakti_irq_handler, DEVICE_GET(uart_shakti_0),
+			0);
 
 	irq_enable(DT_INST_IRQN(0));
 }
@@ -432,21 +450,60 @@ static const struct uart_shakti_device_config uart_shakti_dev_cfg_1 = {
 };
 
 DEVICE_AND_API_INIT(uart_shakti_1, DT_INST_LABEL(1),
-		    uart_shakti_init,
-		    &uart_shakti_data_1, &uart_shakti_dev_cfg_1,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    (void *)&uart_shakti_driver_api);
+		uart_shakti_init,
+		&uart_shakti_data_1, &uart_shakti_dev_cfg_1,
+		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		(void *)&uart_shakti_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_shakti_irq_cfg_func_1(void)
 {
 	IRQ_CONNECT(DT_INST_IRQN(1),
-		    CONFIG_UART_SHAKTI_PORT_1_IRQ_PRIORITY,
-		    uart_shakti_irq_handler, DEVICE_GET(uart_shakti_1),
-		    0);
+			CONFIG_UART_SHAKTI_PORT_1_IRQ_PRIORITY,
+			uart_shakti_irq_handler, DEVICE_GET(uart_shakti_1),
+			0);
 
 	irq_enable(DT_INST_IRQN(1));
 }
 #endif
 
 #endif /* CONFIG_UART_SHAKTI_PORT_1 */
+
+#ifdef CONFIG_UART_SHAKTI_PORT_2
+
+static struct uart_shakti_data uart_shakti_data_2;
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void uart_shakti_irq_cfg_func_2(void);
+#endif
+
+static const struct uart_shakti_device_config uart_shakti_dev_cfg_2 = {
+	.port         = DT_INST_REG_ADDR(1),
+	.sys_clk_freq = DT_INST_PROP(1, clock_frequency),
+	.baud_rate    = DT_INST_PROP(1, current_speed),
+	.rxcnt_irq    = CONFIG_UART_SHAKTI_PORT_2_RXCNT_IRQ,
+	.txcnt_irq    = CONFIG_UART_SHAKTI_PORT_2_TXCNT_IRQ,
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.cfg_func     = uart_shakti_irq_cfg_func_2,
+#endif
+};
+
+DEVICE_AND_API_INIT(uart_shakti_2, DT_INST_LABEL(1),
+		uart_shakti_init,
+		&uart_shakti_data_2, &uart_shakti_dev_cfg_2,
+		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		(void *)&uart_shakti_driver_api);
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void uart_shakti_irq_cfg_func_1(void)
+{
+	IRQ_CONNECT(DT_INST_IRQN(1),
+			CONFIG_UART_SHAKTI_PORT_2_IRQ_PRIORITY,
+			uart_shakti_irq_handler, DEVICE_GET(uart_shakti_2),
+			0);
+
+	irq_enable(DT_INST_IRQN(1));
+}
+#endif
+
+#endif /* CONFIG_UART_SHAKTI_PORT_2 */

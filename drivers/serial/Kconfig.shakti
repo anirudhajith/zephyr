@@ -1,0 +1,71 @@
+# Shakti  UART configuration option
+
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UART_SHAKTI
+	bool "Shakti  serial driver"
+	depends on SOC_RISCV_SHAKTI_CCLASS
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the Shakti  serial driver.
+
+# ---------- Port 0 ----------
+
+menuconfig UART_SHAKTI_PORT_0
+	bool "Enable SHAKTI Port 0"
+	depends on UART_SHAKTI
+	help
+	  This tells the driver to configure the UART port at boot, depending on
+	  the additional configure options below.
+
+config UART_SHAKTI_PORT_0_IRQ_PRIORITY
+	int "Port 0 Interrupt Priority"
+	default 1
+	depends on UART_SHAKTI_PORT_0
+	help
+	  Port 0 Interrupt Priority
+
+config UART_SHAKTI_PORT_0_RXCNT_IRQ
+	int "Port 0 RX Interrupt Threshold Count"
+	default 0
+	depends on UART_SHAKTI_PORT_0
+	help
+	  Port 0 RX Threshold at which the RX FIFO interrupt triggers.
+
+config UART_SHAKTI_PORT_0_TXCNT_IRQ
+	int "Port 0 TX Interrupt Threshold Count"
+	default 1
+	depends on UART_SHAKTI_PORT_0
+	help
+	  Port 0 TX Threshold at which the TX FIFO interrupt triggers.
+
+# ---------- Port 1 ----------
+
+menuconfig UART_SHAKTI_PORT_1
+	bool "Enable SHAKTI Port 1"
+	depends on UART_SHAKTI
+	help
+	  This tells the driver to configure the UART port at boot, depending on
+	  the additional configure options below.
+
+config UART_SHAKTI_PORT_1_IRQ_PRIORITY
+	int "Port 1 Interrupt Priority"
+	default 1
+	depends on UART_SHAKTI_PORT_1
+	help
+	  Port 1 Interrupt Priority
+
+config UART_SHAKTI_PORT_1_RXCNT_IRQ
+	int "Port 0 RX Interrupt Threshold Count"
+	default 0
+	depends on UART_SHAKTI_PORT_1
+	help
+	  Port 1 RX Threshold at which the RX FIFO interrupt triggers.
+
+config UART_SHAKTI_PORT_1_TXCNT_IRQ
+	int "Port 1 TX Interrupt Threshold Count"
+	default 0
+	depends on UART_SHAKTI_PORT_1
+	help
+	  Port 1 TX Threshold at which the TX FIFO interrupt triggers.

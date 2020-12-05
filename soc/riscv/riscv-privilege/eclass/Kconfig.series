@@ -7,4 +7,4 @@ config SOC_SERIES_RISCV_SHAKTI
 	select RISCV
 	select SOC_FAMILY_RISCV_PRIVILEGE
 	help
-	  Enable support for Shakti SOC
+	  Enable support for Shakti SOC e-class

@@ -1,0 +1,2 @@
+dts/riscv/riscv32-parashu.dtsi
+soc/riscv/riscv-privilege/eclass/Kconfig.defconfig.series

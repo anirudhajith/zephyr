@@ -11,3 +11,5 @@ testing:
     - net
     - bluetooth
     - xip  
+  supported:
+    - uart
