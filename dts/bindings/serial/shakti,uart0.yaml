@@ -11,4 +11,4 @@ properties:
       required: true
 
     interrupts:
-      required: true
+      required: false
