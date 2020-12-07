@@ -36,21 +36,21 @@
 #define UART_TX_BUFFER_SIZE       	10000
 
 struct uart_shakti_regs_t {
-	uint16_t baud;	 /*! Baud rate configuration Register -- 16 bits*/
-	uint16_t reserv0;	 /*! reserved */
-	uint32_t  tx;	 /*! Transmit register -- the value that needs to be tranmitted needs to be written here-32 bits*/
-	uint32_t  rx;	 /*! Receive register -- the value that received from uart can be read from here --32 bits*/
-	char  status;	 /*! Status register -- Reads various transmit and receive status - 8 bits*/
-	char  reserv1;	 /*! reserved */
-	uint16_t  reserv2; /*! reserved */
-	uint16_t delay;    /*! Delays the transmit with specified clock - 16bits*/
-	uint16_t reserv3;  /*! reserved */
-	uint16_t control;   /*! Control Register -- Configures the no. of bits used, stop bits, parity enabled or not - 16bits*/
-	uint16_t reserv5;  /*! reserved */
-	char ie;	     /*! Enables the required interrupts - 8 bits*/
-	char reserv6;   /*! reserved */
-	uint16_t reserv7;  /*! reserved */
-	char  iqcycles; /*! 8-bit register that indicates number of input qualification cycles - 8 bits*/
+	uint16_t baud;	 		/*! Baud rate configuration Register -- 16 bits*/
+	uint16_t reserv0;	 	/*! reserved */
+	uint32_t  tx;	 		/*! Transmit register -- the value that needs to be tranmitted needs to be written here-32 bits*/
+	uint32_t  rx;	 		/*! Receive register -- the value that received from uart can be read from here --32 bits*/
+	char  status;	 		/*! Status register -- Reads various transmit and receive status - 8 bits*/
+	char  reserv1;	 		/*! reserved */
+	uint16_t  reserv2; 		/*! reserved */
+	uint16_t delay;   		/*! Delays the transmit with specified clock - 16bits*/
+	uint16_t reserv3;  		/*! reserved */
+	uint16_t control;   	/*! Control Register -- Configures the no. of bits used, stop bits, parity enabled or not - 16bits*/
+	uint16_t reserv5;  		/*! reserved */
+	char ie;	     		/*! Enables the required interrupts - 8 bits*/
+	char reserv6;   		/*! reserved */
+	uint16_t reserv7;  		/*! reserved */
+	char  iqcycles; 		/*! 8-bit register that indicates number of input qualification cycles - 8 bits*/
 };
 
 

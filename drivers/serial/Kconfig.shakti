@@ -4,7 +4,7 @@
 
 menuconfig UART_SHAKTI
 	bool "Shakti  serial driver"
-	depends on SOC_RISCV_SHAKTI_CCLASS
+	depends on SOC_RISCV_SHAKTI_ECLASS
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
