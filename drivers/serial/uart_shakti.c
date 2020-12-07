@@ -132,3 +132,65 @@ static const struct uart_driver_api uart_shakti_driver_api = {
 	.err_check        = NULL,
 };
 
+
+#ifdef CONFIG_UART_SHAKTI_PORT_0
+
+static struct uart_shakti_data uart_shakti_data_0;
+static const struct uart_shakti_device_config uart_shakti_dev_cfg_0 = {
+	.port         = DT_INST_REG_ADDR(0),
+	.sys_clk_freq = DT_INST_PROP(0, clock_frequency),
+	.baud_rate    = DT_INST_PROP(0, current_speed),
+	.rxcnt_irq    = CONFIG_UART_SHAKTI_PORT_0_RXCNT_IRQ,
+	.txcnt_irq    = CONFIG_UART_SHAKTI_PORT_0_TXCNT_IRQ,
+};
+
+DEVICE_AND_API_INIT(uart_shakti_0, DT_INST_LABEL(0),
+		    uart_shakti_init,
+		    &uart_shakti_data_0, &uart_shakti_dev_cfg_0,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    (void *)&uart_shakti_driver_api);
+
+
+#endif /* CONFIG_UART_SHAKTI_PORT_0 */
+
+#ifdef CONFIG_UART_SHAKTI_PORT_1
+
+static struct uart_shakti_data uart_shakti_data_1;
+
+static const struct uart_shakti_device_config uart_shakti_dev_cfg_1 = {
+	.port         = DT_INST_REG_ADDR(1),
+	.sys_clk_freq = DT_INST_PROP(1, clock_frequency),
+	.baud_rate    = DT_INST_PROP(1, current_speed),
+	.rxcnt_irq    = CONFIG_UART_SHAKTI_PORT_1_RXCNT_IRQ,
+	.txcnt_irq    = CONFIG_UART_SHAKTI_PORT_1_TXCNT_IRQ,
+};
+
+DEVICE_AND_API_INIT(uart_shakti_1, DT_INST_LABEL(1),
+		    uart_shakti_init,
+		    &uart_shakti_data_1, &uart_shakti_dev_cfg_1,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    (void *)&uart_shakti_driver_api);
+
+
+#endif /* CONFIG_UART_SHAKTI_PORT_1 */
+
+#ifdef CONFIG_UART_SHAKTI_PORT_2
+
+static struct uart_shakti_data uart_shakti_data_2;
+
+static const struct uart_shakti_device_config uart_shakti_dev_cfg_2 = {
+	.port         = DT_INST_REG_ADDR(1),
+	.sys_clk_freq = DT_INST_PROP(1, clock_frequency),
+	.baud_rate    = DT_INST_PROP(1, current_speed),
+	.rxcnt_irq    = CONFIG_UART_SHAKTI_PORT_1_RXCNT_IRQ,
+	.txcnt_irq    = CONFIG_UART_SHAKTI_PORT_1_TXCNT_IRQ,
+};
+
+DEVICE_AND_API_INIT(uart_shakti_2, DT_INST_LABEL(1),
+		    uart_shakti_init,
+		    &uart_shakti_data_2, &uart_shakti_dev_cfg_2,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    (void *)&uart_shakti_driver_api);
+
+
+#endif /* CONFIG_UART_SHAKTI_PORT_2 */
