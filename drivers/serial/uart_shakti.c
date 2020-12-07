@@ -53,6 +53,10 @@ struct uart_shakti_regs_t {
 	char  iqcycles; 		/*! 8-bit register that indicates number of input qualification cycles - 8 bits*/
 };
 
+struct uart_shakti_data {
+
+};
+
 
 struct uart_shakti_device_config {
 	uintptr_t   port;
